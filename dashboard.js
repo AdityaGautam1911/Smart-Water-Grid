@@ -43,6 +43,69 @@ async function readArduinoData() {
   reader.releaseLock();
 }
 
+async function sendEmailAlert(subject, message) {
+  try {
+    const response = await fetch("http://localhost:3000/send-alert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject, message }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to send email alert.");
+    }
+
+    console.log("Email alert sent successfully.");
+  } catch (error) {
+    console.error("Error sending email alert:", error);
+  }
+}
+
+function updateDashboard(distance, light) {
+  // Update Water Level Section
+  const waterLevelElement = document.getElementById("waterLevel");
+  const waterAlertElement = document.getElementById("waterLevelAlert");
+
+  waterLevelElement.textContent = `${distance} cm`;
+
+  if (distance < 10 || distance > 1000) {
+    waterAlertElement.textContent = "WATER LEVEL HIGH";
+    waterAlertElement.style.color = "red";
+    sendEmailAlert(
+      "Water Level Alert: HIGH",
+      `The water level is critically high at ${distance} cm.`
+    );
+  } else if (distance > 30) {
+    waterAlertElement.textContent = "WATER LEVEL LOW";
+    waterAlertElement.style.color = "orange";
+    sendEmailAlert(
+      "Water Level Alert: LOW",
+      `The water level is low at ${distance} cm.`
+    );
+  } else {
+    waterAlertElement.textContent = "WATER LEVEL NORMAL";
+    waterAlertElement.style.color = "green";
+  }
+
+  // Update Turbidity Section
+  const turbidityElement = document.getElementById("turbidityLevel");
+  const turbidityAlertElement = document.getElementById("turbidityAlert");
+
+  turbidityElement.textContent = light;
+
+  if (light > 800) {
+    turbidityAlertElement.textContent = "HIGH TURBIDITY LEVEL";
+    turbidityAlertElement.style.color = "red";
+    sendEmailAlert(
+      "Turbidity Alert: HIGH",
+      `High turbidity detected with a value of ${light}.`
+    );
+  } else {
+    turbidityAlertElement.textContent = "TURBIDITY LEVEL NORMAL";
+    turbidityAlertElement.style.color = "green";
+  }
+}
+
 function updateDashboard(distance, light) {
   // Update Water Level Section
   const waterLevelElement = document.getElementById("waterLevel");
